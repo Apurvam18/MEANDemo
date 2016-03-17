@@ -16,13 +16,18 @@ app.controller("MainCtrl",[
 				return ;
 			}
 			$scope.posts.push({
-				title: $scope.title,
-				link: $scope.link,
-				upvotes:0
+				title:$scope.title,
+				link:$scope.link,
+				upvotes:0,
+				comments:[
+					{author:'joy',body:'cool post',upvotes:0},
+					{author:'bob',body:'mast',upvotes:2}
+				]
 			});
 			$scope.title="";
 			$scope.link="";
 		};
+
 		$scope.incrementUpvotes=function (post) {
 			post.upvotes+=1;
 		};
@@ -35,15 +40,20 @@ app.controller('postsCtrl',[
 	'posts',
 	function ($scope,$stateParams,posts) {
 		$scope.post=posts.posts[$stateParams.id];
-		$scope.posts.push({
-			title:$scope.title,
-			link:$scope.link,
-			upvotes:0,
-			comments:[
-				{author:'joy',body:'cool post',upvotes:0},
-				{author:'bob',body:'mast',upvotes:2}
-			]
-		});
+		$scope.incrementUpvotes=function (comment) {
+			comment.upvotes+=1;
+		}
+		$scope.addComment= function() {
+			if (!$scope.body||$scope.body=='') {
+					return;
+			}
+			$scope.post.comments.push({
+				author:'user',
+				body:$scope.body,
+				upvotes:0
+			});
+			$scope.body="";
+		};
 	}])
 	app.config([
 		'$stateProvider',
