@@ -56,5 +56,6 @@ app.use(function(err, req, res, next) {
   });
 });
 
-
+var mongoose=require('mongoose');
+mongoose.connect('mongodb://localhost/news');
 module.exports = app;
