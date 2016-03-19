@@ -1,13 +1,26 @@
-var app=angular.module("flapperNews",['ui.router']);
-
-app.factory('posts',[function () {
-	var o={
-		posts:[]
-	};
-	return o;
-}]);
-
-app.controller("MainCtrl",[
+var app=angular.module("flapperNews",['ui.router'])
+.config([
+	'$stateProvider',
+'$urlRouterProvider',
+function ($stateProvider,$urlRouterProvider) {
+	$stateProvider.state('home',{
+		url:'/home',
+		templateUrl:'/home.html',
+		controller:'MainCtrl',
+		resolve:{
+			postPromise: ['posts',function (posts) {
+				return posts.getAll();
+			}]
+		}
+	});
+	$stateProvider.state('posts',{
+		url:'/posts/{id}',
+		templateUrl:'/posts.html',
+		controller: 'postsCtrl'
+	});
+$urlRouterProvider.otherwise('home');
+}])
+.controller("MainCtrl",[
 	'$scope','posts',
 	function ($scope,posts) {
 		$scope.posts=posts.posts;
@@ -15,26 +28,20 @@ app.controller("MainCtrl",[
 			if(!$scope.title||$scope.title===''){
 				return ;
 			}
-			$scope.posts.push({
+			posts.create({
 				title:$scope.title,
-				link:$scope.link,
-				upvotes:0,
-				comments:[
-					{author:'joy',body:'cool post',upvotes:0},
-					{author:'bob',body:'mast',upvotes:2}
-				]
+				link:$scope.link
 			});
 			$scope.title="";
 			$scope.link="";
 		};
 
 		$scope.incrementUpvotes=function (post) {
-			post.upvotes+=1;
+			posts.upvote(post);
 		};
 	}
-	]);
-
-app.controller('postsCtrl',[
+	])
+.controller('postsCtrl',[
 	'$scope',
 	'$stateParams',
 	'posts',
@@ -55,19 +62,29 @@ app.controller('postsCtrl',[
 			$scope.body="";
 		};
 	}])
-	app.config([
-		'$stateProvider',
-	'$urlRouterProvider',
-	function ($stateProvider,$urlRouterProvider) {
-		$stateProvider.state('home',{
-			url:'/home',
-			templateUrl:'/home.html',
-			controller:'MainCtrl'
-		});
-		$stateProvider.state('posts',{
-			url:'/posts/{id}',
-			templateUrl:'/posts.html',
-			controller: 'postsCtrl'
-		});
-	$urlRouterProvider.otherwise('home');
+.factory('posts',['$http',function ($http) {
+		var o={
+			posts:[]
+		};
+		o.create=function (post) {
+			return $http.post('/posts',post).success(function (data) {
+				o.posts.push(data);
+			});
+		}
+		o.getAll=function () {
+			return $http.get('/posts').success(function (data) {
+				angular.copy(data, o.posts);
+			});
+		};
+		o.upvote=function (post) {
+			return $http.put('/posts/'+post.id+'/upvote').success(function (data) {
+				post.upvotes+=1;
+			});
+		}
+		o.get=function (id) {
+			return $http.get('/posts/'+id).then(function (res) {
+				return res.data;
+			});
+		}
+		return o;
 	}]);
