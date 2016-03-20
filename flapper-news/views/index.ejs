@@ -25,7 +25,7 @@
 			<a ng-show="post.link" href="{{post.title}}">{{post.title}}</a>
 			<span ng-hide="post.link">{{post.title}}</span>
 		</span>
-		<span><a href="#/posts/{{$index}}">Comments</a></span>
+		<span><a href="#/posts/{{post._id}}">Comments</a></span>
 	</div>
 	<form ng-submit="addPost()" style="margin-top:30px;">
 		<h3>Add a New Post</h3>

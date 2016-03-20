@@ -16,7 +16,12 @@ function ($stateProvider,$urlRouterProvider) {
 	$stateProvider.state('posts',{
 		url:'/posts/{id}',
 		templateUrl:'/posts.html',
-		controller: 'postsCtrl'
+		controller: 'postsCtrl',
+		resolve:{
+			post:['$stateParams','posts',function ($stateParams,posts) {
+				return posts.get($stateParams.id);
+			}]
+		}
 	});
 $urlRouterProvider.otherwise('home');
 }])
@@ -43,21 +48,22 @@ $urlRouterProvider.otherwise('home');
 	])
 .controller('postsCtrl',[
 	'$scope',
-	'$stateParams',
 	'posts',
-	function ($scope,$stateParams,posts) {
-		$scope.post=posts.posts[$stateParams.id];
+	'post',
+	function ($scope,posts,post) {
+		$scope.post=post;
 		$scope.incrementUpvotes=function (comment) {
-			comment.upvotes+=1;
-		}
+			posts.upvoteComment(post,comment);
+		};
 		$scope.addComment= function() {
 			if (!$scope.body||$scope.body=='') {
 					return;
 			}
-			$scope.post.comments.push({
+			posts.addComment(post._id,{
 				author:'user',
-				body:$scope.body,
-				upvotes:0
+				body:$scope.body
+			}).success(function (comment) {
+				$scope.post.comments.push(comment);
 			});
 			$scope.body="";
 		};
@@ -66,18 +72,26 @@ $urlRouterProvider.otherwise('home');
 		var o={
 			posts:[]
 		};
+		o.upvoteComment=function (post,comment) {
+			return $http.put("/posts/"+post._id+"/comments/"+comment._id+"/upvote").success(function (data) {
+				comment.upvotes+=1;
+			});
+		};
+		o.addComment=function (id, comment) {
+			return $http.post('/posts/'+id+"/comments",comment);
+		};
 		o.create=function (post) {
 			return $http.post('/posts',post).success(function (data) {
 				o.posts.push(data);
 			});
-		}
+		};
 		o.getAll=function () {
 			return $http.get('/posts').success(function (data) {
 				angular.copy(data, o.posts);
 			});
 		};
 		o.upvote=function (post) {
-			return $http.put('/posts/'+post.id+'/upvote').success(function (data) {
+			return $http.put('/posts/'+post._id+'/upvote').success(function (data) {
 				post.upvotes+=1;
 			});
 		}
